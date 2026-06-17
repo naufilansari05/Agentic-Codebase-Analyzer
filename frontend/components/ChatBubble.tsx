@@ -1,6 +1,9 @@
 'use client';
 
 import { Message } from "@/types/chat";
+import ReactMarkdown from 'react-markdown';
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 export default function ChatBubble({message}: {message: Message}) {
 
@@ -16,7 +19,32 @@ export default function ChatBubble({message}: {message: Message}) {
             : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700'
         }`}
       >
-        <p className="whitespace-pre-wrap text-sm">{message.content}</p>
+        <div className="prose dark:prose-invert text-sm break-words">
+          <ReactMarkdown
+            components={{
+              code({node, className, children, ...props}) {
+                const match = /language-(\w+)/.exec(className || '');
+                return match ? (
+                  <SyntaxHighlighter 
+                    style={vscDarkPlus as any}
+                    language={match[1]}
+                    PreTag="div"
+                    {...props}
+                  >
+                    {String(children).replace(/\n$/, '')}
+                  </SyntaxHighlighter>
+                ) : (
+                  <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded" {...props}>
+                    {children}
+                  </code>
+                );
+              }
+            }}
+          >
+            {message.content}
+          </ReactMarkdown>
+
+        </div>
         
         {/* Render Citations if present */}
         {!isUser && message.citations && message.citations.length > 0 && (
