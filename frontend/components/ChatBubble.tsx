@@ -22,14 +22,16 @@ export default function ChatBubble({message}: {message: Message}) {
         <div className="prose dark:prose-invert text-sm break-words">
           <ReactMarkdown
             components={{
-              code({node, className, children, ...props}) {
+              // code({node, className, children, ...props}) {
+              code({node, inline, className, children, ref, ...rest}: any) {
                 const match = /language-(\w+)/.exec(className || '');
-                return match ? (
+                // return match ? (
+                return inline && match ? (
                   <SyntaxHighlighter 
                     style={vscDarkPlus as any}
                     language={match[1]}
                     PreTag="div"
-                    {...props}
+                    {...rest}
                   >
                     {String(children).replace(/\n$/, '')}
                   </SyntaxHighlighter>
