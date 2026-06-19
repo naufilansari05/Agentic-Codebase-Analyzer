@@ -1,11 +1,19 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage, AIMessage
 from agents.graph_agent import codebase_agent
 from typing import List, Literal
 
 app = FastAPI()
+
+# Rate Limiting
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
@@ -51,35 +59,15 @@ def extract_citations(new_messages: list) -> list:
     return list(citations_set)
 
 @app.post("/api/chat")
-async def chat_endpoint(request: ChatRequest):
+@limiter.limit("5/minute")
+async def chat_endpoint(request: Request, payload: ChatRequest):
 
     langchain_messages = []
-    for msg in request.messages:
+    for msg in payload.messages:
         if msg.role == "user":
             langchain_messages.append(HumanMessage(content=msg.content))
         else:
             langchain_messages.append(AIMessage(content=msg.content))
-
-    # inputs = {"messages": langchain_messages}
-    # result = codebase_agent.invoke(inputs)
-    # ai_message = result["messages"][-1]
-    # raw_content = ai_message.content
-
-    # if isinstance(raw_content, str):
-    #     final_text = raw_content
-    # elif isinstance(raw_content, list):
-    #     final_text = "\n".join(
-    #         block["text"] for block in raw_content if isinstance(block, dict) and "text" in block
-    #     )
-    # elif isinstance(raw_content, dict) and "text" in raw_content:
-    #     final_text = raw_content["text"]
-    # else: 
-    #     final_text = str(raw_content)
-
-    # return {
-    #     "reply": final_text,
-    #     "citations": ["src/auth/mock.py"] # need to replace later
-    # }
 
     num_input_messages = len(langchain_messages)
     inputs = {"messages": langchain_messages}
