@@ -36,7 +36,7 @@ export default function ChatBubble({message}: {message: Message}) {
                     {String(children).replace(/\n$/, '')}
                   </SyntaxHighlighter>
                 ) : (
-                  <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded" {...props}>
+                  <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded" {...rest}>
                     {children}
                   </code>
                 );
